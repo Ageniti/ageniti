@@ -6,11 +6,10 @@
   "private": false,
   "license": "MIT",
   "author": "Ageniti contributors",
-  "homepage": "https://github.com/Ageniti/ageniti#readme",
+  "homepage": "https://ageniti.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Ageniti/ageniti.git",
-    "directory": "ageniti"
+    "url": "git+https://github.com/Ageniti/ageniti.git"
   },
   "bugs": {
     "url": "https://github.com/Ageniti/ageniti/issues"

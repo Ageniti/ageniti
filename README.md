@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/Ageniti/ageniti">
+  <a href="https://ageniti.dev">
     <img src="assets/logo.svg" alt="Ageniti logo" width="96" height="96">
   </a>
 </p>
@@ -13,13 +13,15 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@ageniti/core"><img alt="npm version" src="https://img.shields.io/npm/v/@ageniti/core?style=flat-square"></a>
   <a href="https://www.npmjs.com/package/@ageniti/core"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@ageniti/core?style=flat-square"></a>
-  <a href="https://github.com/Ageniti/ageniti/blob/main/ageniti/LICENSE"><img alt="license" src="https://img.shields.io/npm/l/@ageniti/core?style=flat-square"></a>
+  <a href="https://github.com/Ageniti/ageniti/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/npm/l/@ageniti/core?style=flat-square"></a>
   <a href="https://www.npmjs.com/package/@ageniti/core"><img alt="node" src="https://img.shields.io/node/v/@ageniti/core?style=flat-square"></a>
   <a href="https://github.com/Ageniti/ageniti"><img alt="module format" src="https://img.shields.io/badge/module-ESM-black?style=flat-square"></a>
   <a href="https://discord.gg/cmkxR7GcYu"><img alt="discord" src="https://img.shields.io/badge/Discord-Join-5865F2?style=flat-square&logo=discord&logoColor=white"></a>
 </p>
 
 <p align="center">
+  <a href="https://ageniti.dev">Website</a>
+  ·
   <a href="https://github.com/Ageniti/ageniti">GitHub</a>
   ·
   <a href="https://www.npmjs.com/package/@ageniti/core">npm</a>
