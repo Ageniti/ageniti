@@ -492,7 +492,7 @@ test("buildArtifacts creates runnable cli launcher", async () => {
   });
 
   const { stdout } = await execFileAsync(process.execPath, [path.join(outDir, "cli.mjs"), "actions"], {
-    cwd: "/Users/aidenli/Desktop/CLI-SDK",
+    cwd: tempDir,
   });
   const actions = JSON.parse(stdout);
 
