@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.1
+
+Release hardening update for public SDK distribution.
+
+### Added
+
+- GitHub Actions CI for test and package dry-run checks.
+- Host starter templates for OpenAI Responses, AI SDK, MCP, and HTTP gateway usage.
+- Runnable host examples backed by a shared task app.
+- Shared exposure policy helper for external surfaces.
+
+### Fixed
+
+- MCP, HTTP, OpenAI, and AI SDK surfaces now consistently hide `private`, `local`, and destructive actions by default.
+- Example permission checks no longer grant write permissions by default.
+- AI SDK tools continue to execute through the shared runtime and validation path.
+- npm bin metadata uses a valid executable path.
+
+### Changed
+
+- Documentation now consistently positions Ageniti as an SDK for apps that agents can use, not an agent framework.
+- Declared actions default to `public` visibility; use `local` or `private` for restricted capabilities.
+
 ## 0.1.0
 
 Initial public-ready release candidate for exposing React and TypeScript app actions to agents and automation tools.
