@@ -149,8 +149,9 @@ export function createCli(options) {
     if (command === "init") {
       try {
         const template = rest[0] ?? "react";
-        if (!["react", "expo", "next"].includes(template)) {
-          io.stderr(`Unknown init template "${template}". Use "react", "expo", or "next".\n`);
+        const initTemplates = ["react", "expo", "next", "host-openai", "host-ai-sdk", "host-mcp", "host-http"];
+        if (!initTemplates.includes(template)) {
+          io.stderr(`Unknown init template "${template}". Use ${initTemplates.map((item) => `"${item}"`).join(", ")}.\n`);
           return 2;
         }
 

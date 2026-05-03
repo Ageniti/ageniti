@@ -23,7 +23,7 @@ export function createDevServer(options) {
       if (request.method === "GET" && url.pathname === "/api/actions") {
         sendJson(response, {
           app: name,
-          actions: createActionManifest(actions, { surface: "dev", includePrivate: true }),
+          actions: createActionManifest(actions, { surface: "dev", includePrivate: true, includeLocal: true }),
         });
         return;
       }

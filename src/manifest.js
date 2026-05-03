@@ -1,3 +1,5 @@
+import { canExposeVisibility } from "./exposure.js";
+
 export function createActionManifest(actions, options = {}) {
   const surface = options.surface;
 
@@ -116,11 +118,19 @@ export function diffActionManifests(previous, next) {
 }
 
 function shouldExpose(action, options) {
-  if (options.includePrivate) {
-    return true;
+  if (!canExposeVisibility(action, options)) {
+    return false;
   }
 
-  return action.visibility !== "private";
+  if (
+    Object.hasOwn(options, "includeDestructive")
+    && options.includeDestructive !== true
+    && action.sideEffects === "destructive"
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function normalizeActionList(manifestOrActions) {

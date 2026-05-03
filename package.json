@@ -19,7 +19,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "bin": {
-    "ageniti": "bin/ageniti.mjs"
+    "ageniti": "./bin/ageniti.mjs"
   },
   "keywords": [
     "agents",
@@ -111,6 +111,10 @@
     "demo": "node examples/demo.cli.js",
     "demo:dev": "node examples/demo.cli.js dev --port 4321",
     "demo:mcp": "node examples/demo.cli.js mcp --stdio",
+    "example:responses": "node examples/openai-responses-host.js",
+    "example:ai-sdk": "node examples/ai-sdk-route.js",
+    "example:http": "node examples/http-gateway.js",
+    "example:mcp-host": "node examples/mcp-host.js",
     "example:schema": "node examples/hello.cli.js hello --schema",
     "example:mcp": "node examples/hello.cli.js mcp"
   },

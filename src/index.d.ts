@@ -75,7 +75,7 @@ export class SchemaValidationError extends Error {
 export function toJSONSchema(schema: Schema): JsonObject;
 
 export type SurfaceName = "cli" | "json" | "mcp" | "react" | "dev" | string;
-export type Visibility = "private" | "local" | "agent" | "public" | string;
+export type Visibility = "private" | "local" | "public" | string;
 export type SideEffects = "read" | "write" | "destructive" | string;
 export type Idempotency = "idempotent" | "non_idempotent" | "conditional" | "unspecified" | string;
 
@@ -410,6 +410,14 @@ export interface HttpHandlerOptions {
   runtimeOptions?: RuntimeOptions;
   basePath?: string;
   includePrivate?: boolean;
+  includeLocal?: boolean;
+  includeDestructive?: boolean;
+}
+
+export interface ManifestOptions {
+  surface?: SurfaceName;
+  includePrivate?: boolean;
+  includeLocal?: boolean;
   includeDestructive?: boolean;
 }
 
@@ -439,7 +447,7 @@ export interface ProjectDoctorResult {
 
 export interface InitProjectResult {
   ok: true;
-  template: "react" | "expo" | "next";
+  template: "react" | "expo" | "next" | "host-openai" | "host-ai-sdk" | "host-mcp" | "host-http";
   cwd: string;
   files: string[];
   appModule: string;
@@ -451,15 +459,15 @@ export function findDefaultAppModule(options?: { cwd?: string; config?: { build?
 export function detectTypeScriptRuntime(options?: { packageJson?: { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }; config?: { build?: BuildOptions } }): string | undefined;
 export function supportsTypeScriptEntrypoints(options?: { packageJson?: { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }; config?: { build?: BuildOptions } }): boolean;
 export function doctorProject(options?: { cwd?: string }): Promise<ProjectDoctorResult>;
-export function initProject(options?: { cwd?: string; template?: "react" | "expo" | "next"; force?: boolean }): Promise<InitProjectResult>;
+export function initProject(options?: { cwd?: string; template?: "react" | "expo" | "next" | "host-openai" | "host-ai-sdk" | "host-mcp" | "host-http"; force?: boolean }): Promise<InitProjectResult>;
 
 export function createJsonRunner(options: { actions?: Action[]; runtime?: ActionRuntime; runtimeOptions?: RuntimeOptions }): {
   runtime: ActionRuntime;
   invoke(payload: { action: string; input?: unknown; confirm?: boolean; user?: unknown; auth?: unknown; metadata?: Record<string, unknown> }): Promise<RuntimeResult>;
 };
 
-export function createMcpManifest(actions: Action[], options?: { includePrivate?: boolean; includeDestructive?: boolean }): { tools: unknown[] };
-export function createMcpHandler(options: { actions?: Action[]; runtime?: ActionRuntime; runtimeOptions?: RuntimeOptions; includePrivate?: boolean; includeDestructive?: boolean }): (request: unknown) => Promise<unknown>;
+export function createMcpManifest(actions: Action[], options?: { includePrivate?: boolean; includeLocal?: boolean; includeDestructive?: boolean }): { tools: unknown[] };
+export function createMcpHandler(options: { actions?: Action[]; runtime?: ActionRuntime; runtimeOptions?: RuntimeOptions; includePrivate?: boolean; includeLocal?: boolean; includeDestructive?: boolean }): (request: unknown) => Promise<unknown>;
 export function createMcpStdioServer(options: { actions?: Action[]; runtime?: ActionRuntime; runtimeOptions?: RuntimeOptions }): {
   start(options?: { input?: any; output?: any }): Promise<void>;
 };
@@ -468,6 +476,7 @@ export interface LlmToolAdapterOptions {
   runtime?: ActionRuntime;
   strict?: boolean;
   includePrivate?: boolean;
+  includeLocal?: boolean;
   includeDestructive?: boolean;
   surface?: SurfaceName;
   returnEnvelope?: boolean;
@@ -535,7 +544,7 @@ export function diffActionManifests(previous: ActionDescription[] | { actions: A
     message: string;
   }>;
 };
-export function createSurfaceManifest(options: { appName: string; actions: Action[]; adapters?: SurfaceAdapter[] }): {
+export function createSurfaceManifest(options: { appName: string; actions: Action[]; adapters?: SurfaceAdapter[] } & ManifestOptions): {
   name: string;
   generatedAt: string;
   actions: ActionDescription[];
@@ -553,7 +562,7 @@ export interface AgenitiApp {
   adapters: SurfaceAdapter[];
   runtime: ActionRuntime;
   manifest(): ReturnType<typeof createSurfaceManifest>;
-  actionManifest(): ActionDescription[];
+  actionManifest(options?: ManifestOptions): ActionDescription[];
   lint(): ReturnType<typeof lintActions>;
   createCli(options?: Partial<Parameters<typeof createCli>[0]>): Cli;
   createMcpHandler(options?: Partial<Parameters<typeof createMcpHandler>[0]>): ReturnType<typeof createMcpHandler>;

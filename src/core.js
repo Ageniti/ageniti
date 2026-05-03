@@ -41,7 +41,7 @@ export function defineAction(config) {
     description: config.description,
     input: config.input ? assertSchema(config.input) : s.object({}),
     output: config.output ? assertSchema(config.output) : undefined,
-    visibility: config.visibility ?? "local",
+    visibility: config.visibility ?? "public",
     sideEffects: config.sideEffects ?? "read",
     idempotency: config.idempotency ?? "unspecified",
     permissions: config.permissions ?? [],

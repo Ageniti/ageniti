@@ -1,5 +1,6 @@
 import nodeHttp from "node:http";
 import { createRuntime } from "./core.js";
+import { canExposeAction } from "./exposure.js";
 import { createActionManifest } from "./manifest.js";
 
 export function createHttpHandler(options = {}) {
@@ -17,7 +18,9 @@ export function createHttpHandler(options = {}) {
         actions: createActionManifest(actions, {
           surface: "http",
           includePrivate: options.includePrivate,
-        }).filter((action) => options.includeDestructive || action.sideEffects !== "destructive"),
+          includeLocal: options.includeLocal,
+          includeDestructive: options.includeDestructive,
+        }),
       });
     }
 
@@ -120,23 +123,7 @@ export async function parseRequestBody(request) {
 }
 
 function canExposeHttpAction(action, options) {
-  if (!action) {
-    return false;
-  }
-
-  if (!action.supportedSurfaces.includes("http")) {
-    return false;
-  }
-
-  if (!options.includePrivate && action.visibility === "private") {
-    return false;
-  }
-
-  if (!options.includeDestructive && action.sideEffects === "destructive") {
-    return false;
-  }
-
-  return true;
+  return canExposeAction(action, "http", options);
 }
 
 function jsonResponse(body, status = 200) {

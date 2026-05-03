@@ -1,8 +1,8 @@
 # Getting Started
 
-Ageniti helps an existing React or TypeScript app expose selected app actions to agents and automation tools.
+Ageniti helps an existing React or TypeScript app expose selected product actions to agent hosts and automation tools.
 
-It does not create an agent. It makes your app agent-facing.
+It does not create an agent. It makes your app callable by agent hosts.
 
 ## Install
 
@@ -52,7 +52,7 @@ import { hello } from "./actions/hello.js";
 
 export const app = createAgenitiApp({
   name: "hello-tool",
-  description: "A simple greeting capability for agents.",
+  description: "A simple greeting capability packaged for agent hosts.",
   docs: {
     summary: "Use this app when an agent needs to greet a person.",
   },

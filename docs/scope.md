@@ -1,8 +1,8 @@
 # Scope
 
-Ageniti is for building agent-facing apps.
+Ageniti is for building apps that agents can use.
 
-It helps existing React and TypeScript applications expose selected app capabilities as structured tools.
+It helps existing React and TypeScript applications expose selected product capabilities as structured tools.
 
 ## In Scope
 

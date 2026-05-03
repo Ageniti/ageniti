@@ -7,7 +7,7 @@
 <h1 align="center">Ageniti</h1>
 
 <p align="center">
-  <strong>Build agent-facing apps from the capabilities your product already has.</strong>
+  <strong>Build apps that agents can use from the capabilities your product already has.</strong>
 </p>
 
 <p align="center">
@@ -33,9 +33,9 @@
   <a href="docs/api.md">API</a>
 </p>
 
-Ageniti helps React and TypeScript apps expose selected app actions as CLI, HTTP, MCP, OpenAI, and AI SDK tools without restructuring the app.
+Ageniti helps React and TypeScript apps expose selected product actions as CLI, HTTP, MCP, OpenAI, and AI SDK tools without restructuring the app.
 
-It is for building **agent-facing apps**, not agents.
+It is for building **apps that agents can use**, not agents.
 
 ## Contents
 
@@ -44,7 +44,7 @@ It is for building **agent-facing apps**, not agents.
 - [What Ageniti Is Not](#what-ageniti-is-not)
 - [Install](#install)
 - [Define An App Action](#define-an-app-action)
-- [Create An Agent-Facing App](#create-an-agent-facing-app)
+- [Create An App Agents Can Use](#create-an-app-agents-can-use)
 - [Use From Existing React UI](#use-from-existing-react-ui)
 - [Generate CLI](#generate-cli)
 - [Expose MCP](#expose-mcp)
@@ -94,6 +94,8 @@ Ageniti does not inspect your React component tree, replace your router, own you
 - Provides a React-friendly invocation adapter.
 - Adds safety metadata for visibility, permissions, side effects, and destructive actions.
 
+Action visibility defaults to `public` for declared actions. Use `visibility: "local"` for local-only capabilities and `visibility: "private"` for implementation-only capabilities.
+
 ## What Ageniti Is Not
 
 - Not an agent framework.
@@ -121,6 +123,11 @@ For project scaffolding from a terminal, run the bundled CLI through your packag
 ```text
 npx @ageniti/core init react
 npx @ageniti/core init expo
+npx @ageniti/core init next
+npx @ageniti/core init host-openai
+npx @ageniti/core init host-ai-sdk
+npx @ageniti/core init host-mcp
+npx @ageniti/core init host-http
 npx @ageniti/core doctor
 ```
 
@@ -154,7 +161,7 @@ export const createTask = defineAction({
 });
 ```
 
-## Create An Agent-Facing App
+## Create An App Agents Can Use
 
 ```js
 import { createAgenitiApp } from "@ageniti/core";
@@ -162,10 +169,10 @@ import { createTask } from "./actions/create-task.js";
 
 export const app = createAgenitiApp({
   name: "task-app",
-  description: "Workspace task operations exposed to agents and automation tools.",
+  description: "Workspace task operations packaged for agent hosts and automation tools.",
   docs: {
     summary: "Use this app to create tasks and inspect task state.",
-    audience: "Workspace agents and internal automation.",
+    audience: "Agent hosts and internal automation.",
     whenToUse: [
       "Use it when an agent needs to create or inspect tasks.",
       "Prefer the regular product UI for multi-step human approval flows.",
@@ -524,8 +531,11 @@ Failure:
 
 ```text
 npm test
+npm run example:responses
+npm run example:ai-sdk
+npm run example:http
+npm run example:mcp-host
 node examples/demo.cli.js search-tasks --status open
-node examples/demo.cli.js create-task --title "Follow up with design review"
 node examples/demo.cli.js manifest
 node examples/demo.cli.js lint
 node examples/demo.cli.js mcp

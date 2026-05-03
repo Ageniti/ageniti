@@ -30,6 +30,8 @@ Optional fields:
 - `deprecated`
 - `deprecation`
 
+Visibility defaults to `public`. Use `local` for capabilities that should remain available only to local UI/dev/CLI paths, and `private` for implementation-only actions that should not be exposed by public surfaces.
+
 Metadata model:
 
 - `metadata`: internal metadata kept in manifests and available at runtime through `context.metadata`
@@ -47,12 +49,12 @@ Versioning model:
 
 ## `createAgenitiApp(options)`
 
-Creates an agent-facing app object that owns selected app actions and exposes them to CLI, HTTP, MCP, OpenAI, AI SDK, JSON, dev console, and React invocation.
+Creates an app object that owns selected product actions and exposes them to CLI, HTTP, MCP, OpenAI, AI SDK, JSON, dev console, and React invocation.
 
 ```js
 const app = createAgenitiApp({
   name: "task-app",
-  description: "Workspace task operations for agents.",
+  description: "Workspace task operations packaged for agent hosts.",
   docs: {
     summary: "Use this app to create tasks and inspect status.",
   },
@@ -241,12 +243,13 @@ Options:
 - `runtime`
 - `strict`
 - `includePrivate`
+- `includeLocal`
 - `includeDestructive`
 - `surface`
 - `returnEnvelope`
 - `filter`
 
-By default, private and destructive actions are filtered out.
+By default, private, local, and destructive actions are filtered out.
 
 ## HTTP API
 
@@ -394,10 +397,11 @@ Important defaults:
 
 ### `initProject(options)`
 
-Scaffolds a React-, Expo-, or Next-friendly Ageniti entry.
+Scaffolds a React-, Expo-, Next-, or host-integration-friendly Ageniti entry.
 
 ```js
 await initProject({ template: "react", cwd: process.cwd() });
+await initProject({ template: "host-openai", cwd: process.cwd() });
 ```
 
 ### `doctorProject(options)`

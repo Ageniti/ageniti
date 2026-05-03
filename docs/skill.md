@@ -1,12 +1,12 @@
 # Skill Guide
 
-This document describes how an Ageniti app exposes its skills to agents, coding assistants, and automation systems.
+This document describes how an Ageniti app exposes its skills to agent hosts, coding assistants, and automation systems.
 
 ## What Ageniti Is
 
-Ageniti is an SDK for building agent-facing apps. It lets a React or TypeScript app expose selected capabilities as structured actions that can be called through CLI, HTTP, MCP, OpenAI-compatible tools, Vercel AI SDK-style tools, JSON automation, a local dev console, and React invocation.
+Ageniti is an SDK for building apps that agents can use. It lets a React or TypeScript app expose selected product capabilities as structured actions that can be called through CLI, HTTP, MCP, OpenAI-compatible tools, Vercel AI SDK-style tools, JSON automation, a local dev console, and React invocation.
 
-Ageniti does not create an agent. It makes an app callable by agents.
+Ageniti does not create an agent. It makes an app callable by agent hosts.
 
 ## Core Mental Model
 
@@ -73,7 +73,7 @@ export const createTask = defineAction({
 
 export const app = createAgenitiApp({
   name: "task-app",
-  description: "Workspace task operations exposed to agents.",
+  description: "Workspace task operations packaged for agent hosts.",
   actions: [createTask],
   services: {
     tasks,
@@ -105,14 +105,15 @@ Do not import React components, browser-only APIs, route handlers, or mobile run
 - `app.createDevServer()` starts a local action inspection and testing console.
 - `app.createReactAdapter()` creates a React-friendly action invocation adapter for existing UI code.
 
-## Safety Rules For Agents
+## Safety Rules For Agent Hosts
 
 - Call actions through the runtime or through app-created adapters. Do not call `action.run()` directly.
 - Respect `visibility`, `supportedSurfaces`, `sideEffects`, `requiresConfirmation`, `permissions`, `version`, `deprecated`, and `deprecation`.
-- Private actions are not public API. Do not expose or invoke them from external agent surfaces.
+- Treat omitted `visibility` as `public`; mark sensitive local-only capabilities with `visibility: "local"` or implementation-only capabilities with `visibility: "private"`.
+- Private and local actions are not public API. Do not expose or invoke them from external surfaces unless the app owner explicitly opts in.
 - Destructive actions require confirmation by default and are filtered from LLM-oriented surfaces unless explicitly allowed.
 - Put secrets, internal identifiers, and non-public implementation notes in `metadata`, not `publicMetadata`.
-- Put agent-facing instructions in `description`, `docs`, and `publicMetadata`.
+- Put host-facing instructions in `description`, `docs`, and `publicMetadata`.
 - Prefer small action inputs with explicit schemas, examples, and output schemas.
 - Treat `GUIDE.md`, manifests, schemas, and action metadata as the public contract.
 
@@ -155,6 +156,10 @@ Recommended commands:
 ageniti init react
 ageniti init expo
 ageniti init next
+ageniti init host-openai
+ageniti init host-ai-sdk
+ageniti init host-mcp
+ageniti init host-http
 ageniti doctor
 task-app build
 task-app build bundle --app-module ./src/ageniti/app.js --app-export app --out-dir ./dist/ageniti
@@ -200,7 +205,7 @@ Use `version`, `deprecated`, and `deprecation` on actions to communicate compati
 
 ## Glossary
 
-- App: the agent-facing wrapper created by `createAgenitiApp()`.
+- App: the wrapper created by `createAgenitiApp()` for selected app capabilities.
 - Action: a typed app capability created by `defineAction()`.
 - Runtime: the shared execution path used by surfaces.
 - Surface: an adapter such as CLI, HTTP, MCP, OpenAI tools, AI SDK tools, JSON, dev, or React.

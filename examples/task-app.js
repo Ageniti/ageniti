@@ -1,9 +1,7 @@
-#!/usr/bin/env node
-import { AgenitiError, createAgenitiApp, defineAction, s } from "../src/index.js";
+import { createAgenitiApp, defineAction, s } from "../src/index.js";
 
 const searchTasks = defineAction({
   name: "search_tasks",
-  title: "Search Tasks",
   description: "Search workspace tasks by keyword and status.",
   visibility: "public",
   sideEffects: "read",
@@ -19,18 +17,19 @@ const searchTasks = defineAction({
       title: s.string(),
       status: s.string(),
       priority: s.string(),
+      assignee: s.string().nullable(),
     })),
   }),
   async run(input, ctx) {
     ctx.logger.info("Searching tasks.", input);
-    const tasks = await ctx.services.tasks.search(input);
-    return { tasks };
+    return {
+      tasks: await ctx.services.tasks.search(input),
+    };
   },
 });
 
 const createTask = defineAction({
   name: "create_task",
-  title: "Create Task",
   description: "Create a workspace task.",
   visibility: "public",
   sideEffects: "write",
@@ -40,13 +39,13 @@ const createTask = defineAction({
     title: s.string().min(1).describe("Task title"),
     assignee: s.string().optional().describe("Optional assignee id"),
     priority: s.enum(["low", "normal", "high"]).default("normal").describe("Task priority"),
-    idempotencyKey: s.string().optional().describe("Optional key used to avoid duplicate tasks"),
   }),
   output: s.object({
     taskId: s.string(),
     title: s.string(),
     status: s.string(),
     priority: s.string(),
+    assignee: s.string().nullable(),
   }),
   async run(input, ctx) {
     ctx.logger.info("Creating task.", {
@@ -59,13 +58,13 @@ const createTask = defineAction({
 
 const deleteTask = defineAction({
   name: "delete_task",
-  title: "Delete Task",
-  description: "Delete a task. Requires explicit confirmation.",
+  description: "Delete a task by id.",
   visibility: "local",
   sideEffects: "destructive",
   idempotency: "conditional",
   requiresConfirmation: true,
   permissions: ["task:delete"],
+  supportedSurfaces: ["cli", "http", "react", "dev"],
   input: s.object({
     taskId: s.string().min(1).describe("Task id to delete"),
   }),
@@ -75,74 +74,73 @@ const deleteTask = defineAction({
   }),
   async run({ taskId }, ctx) {
     ctx.logger.warn("Deleting task.", { taskId });
-    return ctx.services.tasks.delete(taskId);
+    return ctx.services.tasks.remove(taskId);
   },
 });
 
-const app = createAgenitiApp({
-  name: "ageniti-demo",
-  actions: [searchTasks, createTask, deleteTask],
-  services: createServices(),
-  permissionChecker({ action, context }) {
-    if (action.permissions.length === 0) {
-      return true;
-    }
-
-    const granted = context.auth?.permissions ?? [];
-    const missing = action.permissions.filter((permission) => !granted.includes(permission));
-    return missing.length === 0 || `Missing permissions: ${missing.join(", ")}`;
-  },
-  middleware: [
-    async ({ action, context, next }) => {
-      context.logger.debug("Middleware before action.", { action: action.name });
-      try {
-        return await next();
-      } catch (error) {
-        if (error?.code) {
-          throw error;
-        }
-
-        throw new AgenitiError("INTERNAL_ERROR", error instanceof Error ? error.message : "Unknown action error.");
-      }
+export function createTaskApp() {
+  return createAgenitiApp({
+    name: "task-app",
+    description: "Workspace task operations packaged for agent hosts.",
+    docs: {
+      summary: "Use this app when a host needs task search and creation tools.",
+      audience: "Agent hosts, automation scripts, and internal operator tools.",
     },
-  ],
-});
+    actions: [searchTasks, createTask, deleteTask],
+    services: createTaskServices(),
+    permissionChecker({ action, context }) {
+      if (action.permissions.length === 0) {
+        return true;
+      }
 
-await app.createCli().main();
+      const granted = context.auth?.permissions ?? [];
+      const missing = action.permissions.filter((permission) => !granted.includes(permission));
+      return missing.length === 0 || `Missing permissions: ${missing.join(", ")}`;
+    },
+  });
+}
 
-function createServices() {
-  const tasks = new Map();
+function createTaskServices() {
+  const tasks = [
+    { id: "task_001", title: "Follow up with design review", status: "open", priority: "high", assignee: "maya" },
+    { id: "task_002", title: "Prepare release notes", status: "blocked", priority: "normal", assignee: "jo" },
+    { id: "task_003", title: "Archive onboarding checklist", status: "done", priority: "low", assignee: null },
+  ];
 
   return {
     tasks: {
       async search({ keyword, status, limit }) {
-        const sampleTasks = [
-          { id: "task_001", title: "Follow up with design review", status: "open", priority: "high" },
-          { id: "task_002", title: "Prepare release notes", status: "blocked", priority: "normal" },
-          { id: "task_003", title: "Archive onboarding checklist", status: "done", priority: "low" },
-        ];
-
-        return sampleTasks
+        return tasks
           .filter((task) => !status || task.status === status)
           .filter((task) => !keyword || `${task.id} ${task.title}`.toLowerCase().includes(keyword.toLowerCase()))
           .slice(0, limit);
       },
       async create(input) {
-        const taskId = input.idempotencyKey ? `task_${input.idempotencyKey}` : `task_${String(tasks.size + 1).padStart(3, "0")}`;
+        const taskId = `task_${String(tasks.length + 1).padStart(3, "0")}`;
         const task = {
           taskId,
           title: input.title,
           status: "open",
           priority: input.priority,
+          assignee: input.assignee ?? null,
         };
-        tasks.set(taskId, task);
+        tasks.push({
+          id: taskId,
+          title: task.title,
+          status: task.status,
+          priority: task.priority,
+          assignee: task.assignee,
+        });
         return task;
       },
-      async delete(taskId) {
-        return {
-          deleted: tasks.delete(taskId),
-          taskId,
-        };
+      async remove(taskId) {
+        const index = tasks.findIndex((task) => task.id === taskId);
+        if (index >= 0) {
+          tasks.splice(index, 1);
+          return { deleted: true, taskId };
+        }
+
+        return { deleted: false, taskId };
       },
     },
   };

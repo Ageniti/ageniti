@@ -1,4 +1,5 @@
 import { createRuntime } from "./core.js";
+import { canExposeAction } from "./exposure.js";
 
 export function createMcpManifest(actions, options = {}) {
   return {
@@ -121,17 +122,5 @@ function parseJsonRpcLine(line) {
 }
 
 function canExposeToMcp(action, options) {
-  if (!action.supportedSurfaces.includes("mcp")) {
-    return false;
-  }
-
-  if (options.includePrivate !== true && action.visibility === "private") {
-    return false;
-  }
-
-  if (options.includeDestructive !== true && action.sideEffects === "destructive") {
-    return false;
-  }
-
-  return true;
+  return canExposeAction(action, "mcp", options);
 }

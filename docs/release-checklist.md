@@ -5,7 +5,7 @@ Before publishing:
 - Confirm package name availability on npm.
 - Confirm `package.json` metadata.
 - Confirm npm registry points to the intended publish registry.
-- Confirm README says Ageniti is for agent-facing apps, not agents.
+- Confirm README says Ageniti is for apps that agents can use, not agents.
 - Confirm docs do not promise workflow orchestration, hosted runtime, marketplace, or agent planning.
 - Run `npm test`.
 - Run `npm pack --dry-run`.
@@ -25,7 +25,10 @@ npm test
 npm pack --dry-run
 npm publish --dry-run --access public --registry=https://registry.npmjs.org
 node examples/demo.cli.js search-tasks --status open
-node examples/demo.cli.js create-task --title "Follow up with design review"
+npm run example:responses
+npm run example:ai-sdk
+npm run example:http
+npm run example:mcp-host
 node examples/demo.cli.js lint
 node examples/demo.cli.js manifest
 node examples/demo.cli.js mcp

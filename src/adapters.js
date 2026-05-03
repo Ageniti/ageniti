@@ -1,3 +1,5 @@
+import { canExposeAction } from "./exposure.js";
+
 export function defineSurfaceAdapter(adapter) {
   if (!adapter?.name) {
     throw new TypeError("Surface adapter requires a name.");
@@ -56,7 +58,7 @@ export const httpAdapter = defineSurfaceAdapter({
     interactiveConfirmation: false,
   },
   canExpose(action) {
-    return action.supportedSurfaces.includes("http") && action.visibility !== "private";
+    return canExposeAction(action, "http");
   },
 });
 
@@ -72,7 +74,7 @@ export const mcpAdapter = defineSurfaceAdapter({
     interactiveConfirmation: false,
   },
   canExpose(action) {
-    return action.supportedSurfaces.includes("mcp") && action.visibility !== "private";
+    return canExposeAction(action, "mcp");
   },
 });
 
@@ -120,7 +122,7 @@ export const aiSdkAdapter = defineSurfaceAdapter({
     interactiveConfirmation: false,
   },
   canExpose(action) {
-    return action.supportedSurfaces.includes("ai-sdk") && action.sideEffects !== "destructive";
+    return canExposeAction(action, "ai-sdk");
   },
 });
 

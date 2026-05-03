@@ -1,4 +1,5 @@
 import { createRuntime } from "./core.js";
+import { canExposeAction } from "./exposure.js";
 
 export function createOpenAITools(actions, options = {}) {
   return actions
@@ -76,25 +77,7 @@ export function createFunctionCallingManifest(actions, options = {}) {
 }
 
 function canExposeToLlm(action, options) {
-  const surface = llmSurface(options);
-
-  if (options.includePrivate !== true && action.visibility === "private") {
-    return false;
-  }
-
-  if (options.includeDestructive !== true && action.sideEffects === "destructive") {
-    return false;
-  }
-
-  if (!action.supportedSurfaces.includes(surface)) {
-    return false;
-  }
-
-  if (typeof options.filter === "function") {
-    return Boolean(options.filter(action));
-  }
-
-  return true;
+  return canExposeAction(action, llmSurface(options), options);
 }
 
 function llmSurface(options) {

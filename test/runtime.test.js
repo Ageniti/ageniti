@@ -381,7 +381,7 @@ test("exportDocs writes a single GUIDE document", async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-guide-"));
   const result = await exportDocs({
     appName: "math",
-    appDescription: "Math actions for agent-facing workflows.",
+    appDescription: "Math actions packaged for agent hosts.",
     docs: {
       summary: "This app exposes simple arithmetic actions.",
       quickStart: ["Pick an action.", "Provide valid input.", "Read the structured result."],
@@ -752,23 +752,39 @@ test("cli publish performs a dry-run by default", async () => {
   assert.match(result.packageFile, /math-cli-publish-3\.0\.0\.tgz$/);
 });
 
-test("initProject scaffolds react and expo templates", async () => {
+test("initProject scaffolds UI and host templates", async () => {
   const reactDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-init-react-"));
   const expoDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-init-expo-"));
   const nextDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-init-next-"));
+  const openaiDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-init-host-openai-"));
+  const aiSdkDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-init-host-ai-sdk-"));
+  const mcpDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-init-host-mcp-"));
+  const httpDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-init-host-http-"));
 
   const reactResult = await initProject({ cwd: reactDir, template: "react" });
   const expoResult = await initProject({ cwd: expoDir, template: "expo" });
   const nextResult = await initProject({ cwd: nextDir, template: "next" });
+  const openaiResult = await initProject({ cwd: openaiDir, template: "host-openai" });
+  const aiSdkResult = await initProject({ cwd: aiSdkDir, template: "host-ai-sdk" });
+  const mcpResult = await initProject({ cwd: mcpDir, template: "host-mcp" });
+  const httpResult = await initProject({ cwd: httpDir, template: "host-http" });
 
   assert.equal(reactResult.files.some((file) => file.endsWith(path.join("src", "ageniti", "app.js"))), true);
   assert.equal(expoResult.files.some((file) => file.endsWith(path.join("src", "ageniti", "app.js"))), true);
   assert.equal(nextResult.files.some((file) => file.endsWith(path.join("src", "ageniti", "app.js"))), true);
+  assert.equal(openaiResult.files.some((file) => file.endsWith(path.join("src", "ageniti", "host-openai.js"))), true);
+  assert.equal(aiSdkResult.files.some((file) => file.endsWith(path.join("src", "ageniti", "host-ai-sdk.js"))), true);
+  assert.equal(mcpResult.files.some((file) => file.endsWith(path.join("src", "ageniti", "host-mcp.js"))), true);
+  assert.equal(httpResult.files.some((file) => file.endsWith(path.join("src", "ageniti", "host-http.js"))), true);
 
   const expoReadme = await readFile(path.join(expoDir, "src", "ageniti", "README.md"), "utf8");
   assert.match(expoReadme, /Expo/);
   const nextReadme = await readFile(path.join(nextDir, "src", "ageniti", "README.md"), "utf8");
   assert.match(nextReadme, /Next\.js/);
+  const openaiReadme = await readFile(path.join(openaiDir, "src", "ageniti", "README.md"), "utf8");
+  assert.match(openaiReadme, /OpenAI Responses/);
+  const aiSdkReadme = await readFile(path.join(aiSdkDir, "src", "ageniti", "README.md"), "utf8");
+  assert.match(aiSdkReadme, /AI SDK/);
 });
 
 test("doctorProject reports React project readiness", async () => {
@@ -806,6 +822,36 @@ test("mcp manifest filters destructive actions by default", () => {
 
   assert.equal(createMcpManifest([add, destroy]).tools.length, 1);
   assert.equal(createMcpManifest([add, destroy], { includeDestructive: true }).tools.length, 2);
+});
+
+test("external adapters hide local actions by default", async () => {
+  const localRead = defineAction({
+    name: "local_read",
+    description: "Read a local-only value.",
+    visibility: "local",
+    sideEffects: "read",
+    supportedSurfaces: ["http", "mcp", "ai-sdk"],
+    input: s.object({}),
+    run() {
+      return { value: "secret" };
+    },
+  });
+
+  assert.equal(createMcpManifest([localRead]).tools.length, 0);
+  assert.equal(createMcpManifest([localRead], { includeLocal: true }).tools.length, 1);
+  assert.equal(createOpenAITools([localRead]).length, 0);
+  assert.equal(createOpenAITools([localRead], { includeLocal: true }).length, 1);
+
+  const http = createHttpHandler({ actions: [localRead] });
+  const actionsResponse = await http({ method: "GET", url: "/ageniti/actions" });
+  assert.deepEqual(actionsResponse.body.actions, []);
+
+  const invokeResponse = await http({
+    method: "POST",
+    url: "/ageniti/actions/local_read/invoke",
+    body: { input: {} },
+  });
+  assert.equal(invokeResponse.status, 404);
 });
 
 test("lint reports risky action contracts", () => {
@@ -934,4 +980,28 @@ test("app factory exposes ai sdk adapters", async () => {
 
   const tools = app.createAISDKTools();
   assert.deepEqual(await tools.add_numbers.execute({ a: 2, b: 8 }), { sum: 10 });
+});
+
+test("host examples execute successfully", async () => {
+  const examplesDir = path.join(packageDir, "..", "examples");
+
+  const responses = await execFileAsync(process.execPath, [path.join(examplesDir, "openai-responses-host.js")]);
+  const responsesPayload = JSON.parse(responses.stdout);
+  assert.equal(responsesPayload.model, "your-model");
+  assert.equal(responsesPayload.tools.some((tool) => tool.name === "search_tasks"), true);
+
+  const aiSdk = await execFileAsync(process.execPath, [path.join(examplesDir, "ai-sdk-route.js")]);
+  const aiSdkPayload = JSON.parse(aiSdk.stdout);
+  assert.equal(aiSdkPayload.ok, true);
+  assert.equal(aiSdkPayload.data.status, "open");
+
+  const http = await execFileAsync(process.execPath, [path.join(examplesDir, "http-gateway.js")]);
+  const httpPayload = JSON.parse(http.stdout);
+  assert.equal(httpPayload.actions.status, 200);
+  assert.equal(httpPayload.invoke.body.ok, true);
+
+  const mcp = await execFileAsync(process.execPath, [path.join(examplesDir, "mcp-host.js")]);
+  const mcpPayload = JSON.parse(mcp.stdout);
+  assert.equal(mcpPayload.list.result.tools.some((tool) => tool.name === "search_tasks"), true);
+  assert.equal(mcpPayload.call.result.structuredContent.ok, true);
 });
