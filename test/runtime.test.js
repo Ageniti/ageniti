@@ -186,6 +186,121 @@ test("public metadata is exposed consistently while internal metadata stays sepa
   assert.equal(result.ok, true);
 });
 
+test("app attribution is exposed through manifest, cli help, mcp, and guide docs", async () => {
+  const attribution = {
+    text: "Powered by Ageniti",
+    url: "https://ageniti.dev",
+    vendor: "Ageniti",
+    product: "Ageniti Core",
+    docsUrl: "https://ageniti.dev/docs",
+    licenseNotice: "Built with Ageniti SDK",
+  };
+
+  const app = createAgenitiApp({
+    name: "branded-app",
+    actions: [add],
+    attribution,
+  });
+
+  const manifest = app.manifest();
+  assert.equal(manifest.attribution.text, "Powered by Ageniti");
+
+  const mcp = app.createMcpManifest();
+  assert.equal(mcp.attribution.text, "Powered by Ageniti");
+  assert.equal(mcp.tools[0].metadata.attribution.url, "https://ageniti.dev");
+  assert.equal(mcp.tools[0].metadata.attribution.vendor, "Ageniti");
+
+  const openai = app.createOpenAITools();
+  assert.equal(openai[0].metadata.attribution.product, "Ageniti Core");
+
+  const responses = app.createOpenAIResponsesTools();
+  assert.equal(responses[0].metadata.attribution.docsUrl, "https://ageniti.dev/docs");
+
+  const aiSdk = app.createAISDKTools();
+  assert.equal(aiSdk.add_numbers.metadata.attribution.licenseNotice, "Built with Ageniti SDK");
+
+  const guide = app.createGuideDoc();
+  assert.match(guide, /## Attribution/);
+  assert.match(guide, /Powered by Ageniti/);
+  assert.match(guide, /Ageniti Core/);
+
+  const output = [];
+  const cli = app.createCli();
+  const code = await cli.run(["--help"], {
+    stdout: (value) => output.push(value),
+    stderr: () => {},
+  });
+  assert.equal(code, 0);
+  assert.match(output[0], /Powered by Ageniti/);
+  assert.match(output[0], /Ageniti Core/);
+});
+
+test("cli forwards attribution through manifest, docs, build, and mcp outputs", async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-cli-attribution-"));
+  const outDir = path.join(tempDir, "bundle");
+  const cli = createCli({
+    name: "math",
+    description: "Math actions packaged for agent hosts.",
+    docs: {
+      summary: "Use math actions to perform safe arithmetic.",
+    },
+    attribution: {
+      text: "Powered by Ageniti",
+      vendor: "Ageniti",
+      product: "Ageniti Core",
+    },
+    actions: [add],
+    buildOptions: {
+      appModule: buildableAppModule,
+      appExport: "app",
+    },
+  });
+
+  const manifestOutput = [];
+  const manifestCode = await cli.run(["manifest"], {
+    stdout: (value) => manifestOutput.push(value),
+    stderr: () => {},
+  });
+  assert.equal(manifestCode, 0);
+  assert.equal(JSON.parse(manifestOutput[0]).attribution.text, "Powered by Ageniti");
+
+  const docsOutput = [];
+  const docsCode = await cli.run(["docs"], {
+    stdout: (value) => docsOutput.push(value),
+    stderr: () => {},
+  });
+  assert.equal(docsCode, 0);
+  assert.match(docsOutput[0], /## Attribution/);
+
+  const docsFileOutput = [];
+  const docsFileCode = await cli.run(["docs", "--out-dir", path.join(tempDir, "docs")], {
+    stdout: (value) => docsFileOutput.push(value),
+    stderr: () => {},
+  });
+  assert.equal(docsFileCode, 0);
+  const guide = await readFile(path.join(tempDir, "docs", "GUIDE.md"), "utf8");
+  assert.match(guide, /Powered by Ageniti/);
+
+  const buildOutput = [];
+  const buildCode = await cli.run(["build", "--out-dir", outDir], {
+    stdout: (value) => buildOutput.push(value),
+    stderr: () => {},
+  });
+  assert.equal(buildCode, 0);
+  const bundleReport = JSON.parse(await readFile(path.join(outDir, "ageniti.bundle.json"), "utf8"));
+  assert.equal(bundleReport.attribution.product, "Ageniti Core");
+
+  const mcpOutput = [];
+  const mcpCode = await cli.run(["mcp"], {
+    stdout: (value) => mcpOutput.push(value),
+    stderr: () => {},
+  });
+  assert.equal(mcpCode, 0);
+  const mcpManifest = JSON.parse(mcpOutput[0]);
+  assert.equal(mcpManifest.attribution.vendor, "Ageniti");
+  assert.equal(mcpManifest.tools[0].metadata.attribution.text, "Powered by Ageniti");
+});
+
 test("action manifests include versioning and deprecation metadata", () => {
   const legacy = defineAction({
     name: "legacy_action",
@@ -350,6 +465,11 @@ test("app build writes official bundle artifacts", async () => {
   const app = createAgenitiApp({
     name: "math",
     actions: [add],
+    attribution: {
+      text: "Powered by Ageniti",
+      vendor: "Ageniti",
+      docsUrl: "https://ageniti.dev/docs",
+    },
     build: {
       appModule: buildableAppModule,
       appExport: "app",
@@ -370,15 +490,23 @@ test("app build writes official bundle artifacts", async () => {
   assert.equal(bundleReport.commands.cli, "node ./cli.mjs");
   assert.equal(bundleReport.commands.mcp, "node ./mcp-stdio.mjs");
   assert.equal(bundleReport.commands.pack, "npm pack");
+  assert.equal(bundleReport.attribution.vendor, "Ageniti");
   const mcpDescriptor = JSON.parse(await readFile(path.join(outDir, "ageniti.mcp.json"), "utf8"));
   assert.deepEqual(mcpDescriptor.command, ["node", "./mcp-stdio.mjs"]);
   assert.equal(mcpDescriptor.snippets.claudeDesktop.mcpServers.math.command, "node");
+  assert.equal(mcpDescriptor.attribution.text, "Powered by Ageniti");
   const bundleReadme = await readFile(path.join(outDir, "README.md"), "utf8");
   assert.match(bundleReadme, /Ageniti Bundle/);
+  assert.match(bundleReadme, /## Attribution/);
+  assert.match(bundleReadme, /Powered by Ageniti/);
   assert.match(bundleReadme, /npm pack/);
   assert.match(bundleReadme, /Publish To npm/);
   assert.match(bundleReadme, /Connect As MCP/);
   assert.match(bundleReadme, /HTTP Deployment/);
+  const pkg = JSON.parse(await readFile(path.join(outDir, "package.json"), "utf8"));
+  assert.equal(pkg.author, "Ageniti");
+  assert.equal(pkg.homepage, "https://ageniti.dev/docs");
+  assert.equal(pkg.ageniti.attribution.text, "Powered by Ageniti");
   const guideDoc = await readFile(path.join(outDir, "GUIDE.md"), "utf8");
   assert.match(guideDoc, /Available Actions/);
 });

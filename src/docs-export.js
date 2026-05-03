@@ -49,6 +49,27 @@ export function createGuideDoc(options) {
     lines.push("");
   }
 
+  if (context.attribution) {
+    lines.push("## Attribution");
+    lines.push(context.attribution.text);
+    if (context.attribution.vendor) {
+      lines.push(`- Vendor: ${context.attribution.vendor}`);
+    }
+    if (context.attribution.product) {
+      lines.push(`- Product: ${context.attribution.product}`);
+    }
+    if (context.attribution.licenseNotice) {
+      lines.push(`- License notice: ${context.attribution.licenseNotice}`);
+    }
+    if (context.attribution.url) {
+      lines.push(`- URL: ${context.attribution.url}`);
+    }
+    if (context.attribution.docsUrl) {
+      lines.push(`- Docs: ${context.attribution.docsUrl}`);
+    }
+    lines.push("");
+  }
+
   lines.push("## Available Actions");
   lines.push("");
   for (const action of context.actions) {
@@ -147,6 +168,7 @@ function normalizeContext(options) {
 
   return {
     appName: options.appName,
+    attribution: normalizeAttribution(options.attribution),
     summary: docs.summary ?? appDescription,
     audience: docs.audience ?? "",
     whenToUse: docs.whenToUse ?? [],
@@ -165,6 +187,25 @@ function normalizeContext(options) {
         outputExample: action.docs?.outputExample,
       },
     })),
+  };
+}
+
+function normalizeAttribution(attribution) {
+  if (!attribution || typeof attribution !== "object") {
+    return undefined;
+  }
+
+  if (!attribution.text) {
+    return undefined;
+  }
+
+  return {
+    text: attribution.text,
+    url: attribution.url,
+    vendor: attribution.vendor,
+    product: attribution.product,
+    docsUrl: attribution.docsUrl,
+    licenseNotice: attribution.licenseNotice,
   };
 }
 

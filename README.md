@@ -26,6 +26,8 @@
   ·
   <a href="https://www.npmjs.com/package/@ageniti/core">npm</a>
   ·
+  <a href="https://github.com/sponsors/Ageniti">Sponsor</a>
+  ·
   <a href="https://discord.gg/cmkxR7GcYu">Discord</a>
   ·
   <a href="docs/getting-started.md">Getting Started</a>
@@ -109,6 +111,12 @@ Action visibility defaults to `public` for declared actions. Use `visibility: "l
 See [docs/scope.md](docs/scope.md) for the full scope boundary.
 
 If an agent host, coding assistant, or automation system is reading the SDK package directly, start with [docs/skill.md](docs/skill.md). It is a compact skill-facing guide to the core model, safe usage rules, surfaces, and generated artifacts.
+
+## Sponsor Ageniti
+
+Sponsor Ageniti on GitHub to support docs, examples, starter templates, and long-term SDK maintenance.
+
+- [Sponsor on GitHub](https://github.com/sponsors/Ageniti)
 
 ## Install
 

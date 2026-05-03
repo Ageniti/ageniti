@@ -27,6 +27,7 @@ export function createAgenitiApp(options) {
   const buildOptions = options.build ?? {};
   const appDescription = options.description;
   const appDocs = options.docs ?? {};
+  const attribution = options.attribution;
   const runtime = options.runtime ?? createRuntime({
     actions,
     services: options.services,
@@ -44,6 +45,7 @@ export function createAgenitiApp(options) {
         appName: options.name,
         actions,
         adapters,
+        attribution,
       });
     },
     lint() {
@@ -54,6 +56,7 @@ export function createAgenitiApp(options) {
         appName: options.name,
         actions,
         adapters,
+        attribution,
         ...manifestOptions,
       }).actions;
     },
@@ -66,6 +69,7 @@ export function createAgenitiApp(options) {
         buildOptions,
         description: appDescription,
         docs: appDocs,
+        attribution,
         ...cliOptions,
       });
     },
@@ -73,11 +77,12 @@ export function createAgenitiApp(options) {
       return createMcpHandler({
         actions,
         runtime,
+        attribution,
         ...mcpOptions,
       });
     },
     createMcpManifest() {
-      return createMcpManifest(actions);
+      return createMcpManifest(actions, { attribution });
     },
     createJsonRunner(jsonOptions = {}) {
       return createJsonRunner({
@@ -101,19 +106,27 @@ export function createAgenitiApp(options) {
       });
     },
     createOpenAITools(aiOptions = {}) {
-      return createOpenAITools(actions, aiOptions);
+      return createOpenAITools(actions, {
+        attribution,
+        ...aiOptions,
+      });
     },
     createOpenAIResponsesTools(aiOptions = {}) {
-      return createOpenAIResponsesTools(actions, aiOptions);
+      return createOpenAIResponsesTools(actions, {
+        attribution,
+        ...aiOptions,
+      });
     },
     createAISDKTools(aiOptions = {}) {
       return createAISDKTools(actions, {
+        attribution,
         runtime,
         ...aiOptions,
       });
     },
     createFunctionCallingManifest(aiOptions = {}) {
       return createFunctionCallingManifest(actions, {
+        attribution,
         runtime,
         ...aiOptions,
       });
@@ -139,6 +152,7 @@ export function createAgenitiApp(options) {
         appDescription,
         docs: appDocs,
         actions,
+        attribution,
         ...docOptions,
       });
     },
@@ -148,6 +162,7 @@ export function createAgenitiApp(options) {
         appDescription,
         docs: appDocs,
         actions,
+        attribution,
         ...docOptions,
       });
     },
@@ -158,6 +173,7 @@ export function createAgenitiApp(options) {
         docs: appDocs,
         actions,
         adapters,
+        attribution,
         ...buildOptions,
         ...artifactOptions,
       });
@@ -169,6 +185,7 @@ export function createAgenitiApp(options) {
         docs: appDocs,
         actions,
         adapters,
+        attribution,
         ...buildOptions,
         ...packageOptions,
       });
@@ -180,6 +197,7 @@ export function createAgenitiApp(options) {
         docs: appDocs,
         actions,
         adapters,
+        attribution,
         ...buildOptions,
         ...publishOptions,
       });

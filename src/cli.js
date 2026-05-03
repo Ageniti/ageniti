@@ -20,7 +20,7 @@ export function createCli(options) {
     const [command, ...rest] = argv;
 
     if (!command || command === "--help" || command === "-h") {
-      io.stdout(renderRootHelp(name, actions));
+      io.stdout(renderRootHelp(name, actions, options.attribution));
       return 0;
     }
 
@@ -30,7 +30,12 @@ export function createCli(options) {
     }
 
     if (command === "manifest") {
-      io.stdout(JSON.stringify(createSurfaceManifest({ appName: name, actions, adapters }), null, 2));
+      io.stdout(JSON.stringify(createSurfaceManifest({
+        appName: name,
+        actions,
+        adapters,
+        attribution: options.attribution,
+      }), null, 2));
       return 0;
     }
 
@@ -66,6 +71,7 @@ export function createCli(options) {
             appName: name,
             appDescription: options.description,
             docs: options.docs,
+            attribution: options.attribution,
             actions,
             cwd: readOption(rest, "--cwd") ?? process.cwd(),
             outDir,
@@ -77,6 +83,7 @@ export function createCli(options) {
             appName: name,
             appDescription: options.description,
             docs: options.docs,
+            attribution: options.attribution,
             actions,
           }));
         }
@@ -91,6 +98,9 @@ export function createCli(options) {
       try {
         const buildResult = await runBuildCommand({
           appName: name,
+          appDescription: options.description,
+          docs: options.docs,
+          attribution: options.attribution,
           actions,
           adapters,
           defaults: options.buildOptions ?? {},
@@ -108,6 +118,9 @@ export function createCli(options) {
       try {
         const packageResult = await runPackageCommand({
           appName: name,
+          appDescription: options.description,
+          docs: options.docs,
+          attribution: options.attribution,
           actions,
           adapters,
           defaults: options.buildOptions ?? {},
@@ -125,6 +138,9 @@ export function createCli(options) {
       try {
         const publishResult = await runPublishCommand({
           appName: name,
+          appDescription: options.description,
+          docs: options.docs,
+          attribution: options.attribution,
           actions,
           adapters,
           defaults: options.buildOptions ?? {},
@@ -181,11 +197,17 @@ export function createCli(options) {
           return 1;
         }
 
-        await createMcpStdioServer({ actions, runtime }).start();
+        await createMcpStdioServer({
+          actions,
+          runtime,
+          attribution: options.attribution,
+        }).start();
         return 0;
       }
 
-      io.stdout(JSON.stringify(createMcpManifest(actions), null, 2));
+      io.stdout(JSON.stringify(createMcpManifest(actions, {
+        attribution: options.attribution,
+      }), null, 2));
       return 0;
     }
 
@@ -206,7 +228,7 @@ export function createCli(options) {
     const action = findAction(actions, command);
     if (!action) {
       io.stderr(`Unknown command "${command}".\n`);
-      io.stderr(renderRootHelp(name, actions));
+      io.stderr(renderRootHelp(name, actions, options.attribution));
       return 4;
     }
 
@@ -335,7 +357,7 @@ function parseBoolean(value) {
   return Boolean(value);
 }
 
-function renderRootHelp(name, actions) {
+function renderRootHelp(name, actions, attribution) {
   const lines = [
     `${name}`,
     "",
@@ -362,10 +384,31 @@ function renderRootHelp(name, actions) {
     "",
   ];
 
+  if (attribution?.text) {
+    lines.push("Attribution:");
+    lines.push(`  ${attribution.text}`);
+    if (attribution.vendor) {
+      lines.push(`  Vendor: ${attribution.vendor}`);
+    }
+    if (attribution.product) {
+      lines.push(`  Product: ${attribution.product}`);
+    }
+    if (attribution.licenseNotice) {
+      lines.push(`  License: ${attribution.licenseNotice}`);
+    }
+    if (attribution.url) {
+      lines.push(`  ${attribution.url}`);
+    }
+    if (attribution.docsUrl) {
+      lines.push(`  Docs: ${attribution.docsUrl}`);
+    }
+    lines.push("");
+  }
+
   return lines.join("\n");
 }
 
-async function runBuildCommand({ appName, actions, adapters, defaults, args }) {
+async function runBuildCommand({ appName, appDescription, docs, attribution, actions, adapters, defaults, args }) {
   const target = !args[0] || args[0].startsWith("--") ? "bundle" : args[0];
   const validTargets = new Set(["manifest", "cli", "mcp", "docs", "bundle"]);
   if (!validTargets.has(target)) {
@@ -381,6 +424,9 @@ async function runBuildCommand({ appName, actions, adapters, defaults, args }) {
 
   return buildArtifacts({
     appName,
+    appDescription,
+    docs,
+    attribution,
     actions,
     adapters,
     targets: [target],
@@ -393,7 +439,7 @@ async function runBuildCommand({ appName, actions, adapters, defaults, args }) {
   });
 }
 
-async function runPackageCommand({ appName, actions, adapters, defaults, args }) {
+async function runPackageCommand({ appName, appDescription, docs, attribution, actions, adapters, defaults, args }) {
   const cwd = readOption(args, "--cwd") ?? defaults.cwd;
   const outDir = readOption(args, "--out-dir") ?? defaults.outDir;
   const appModule = readOption(args, "--app-module") ?? defaults.appModule;
@@ -402,6 +448,9 @@ async function runPackageCommand({ appName, actions, adapters, defaults, args })
 
   return packageArtifacts({
     appName,
+    appDescription,
+    docs,
+    attribution,
     actions,
     adapters,
     outDir,
@@ -413,7 +462,7 @@ async function runPackageCommand({ appName, actions, adapters, defaults, args })
   });
 }
 
-async function runPublishCommand({ appName, actions, adapters, defaults, args }) {
+async function runPublishCommand({ appName, appDescription, docs, attribution, actions, adapters, defaults, args }) {
   const cwd = readOption(args, "--cwd") ?? defaults.cwd;
   const outDir = readOption(args, "--out-dir") ?? defaults.outDir;
   const appModule = readOption(args, "--app-module") ?? defaults.appModule;
@@ -422,6 +471,9 @@ async function runPublishCommand({ appName, actions, adapters, defaults, args })
 
   return publishArtifacts({
     appName,
+    appDescription,
+    docs,
+    attribution,
     actions,
     adapters,
     outDir,

@@ -3,6 +3,7 @@ import { canExposeAction } from "./exposure.js";
 
 export function createMcpManifest(actions, options = {}) {
   return {
+    attribution: normalizeAttribution(options.attribution),
     tools: actions
       .filter((action) => canExposeToMcp(action, options))
       .map((action) => ({
@@ -12,12 +13,32 @@ export function createMcpManifest(actions, options = {}) {
         inputSchema: action.input.toJSONSchema(),
         metadata: {
           ...action.publicMetadata,
+          ...(options.attribution ? { attribution: normalizeAttribution(options.attribution) } : {}),
           visibility: action.visibility,
           sideEffects: action.sideEffects,
           idempotency: action.idempotency,
           permissions: action.permissions,
         },
       })),
+  };
+}
+
+function normalizeAttribution(attribution) {
+  if (!attribution || typeof attribution !== "object") {
+    return undefined;
+  }
+
+  if (!attribution.text) {
+    return undefined;
+  }
+
+  return {
+    text: attribution.text,
+    url: attribution.url,
+    vendor: attribution.vendor,
+    product: attribution.product,
+    docsUrl: attribution.docsUrl,
+    licenseNotice: attribution.licenseNotice,
   };
 }
 

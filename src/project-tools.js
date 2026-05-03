@@ -288,6 +288,12 @@ import { pingService } from "./services/ping-service.js";
 
 export const app = createAgenitiApp({
   name: "my-app",
+  attribution: {
+    text: "Powered by Ageniti",
+    vendor: "Ageniti",
+    product: "Ageniti Core",
+    url: "https://ageniti.dev",
+  },
   actions: [ping],
   services: {
     ping: pingService,
@@ -385,6 +391,13 @@ const createTask = defineAction({
 export const app = createAgenitiApp({
   name: "task-app",
   description: "Workspace task operations exposed to external hosts.",
+  attribution: {
+    text: "Powered by Ageniti",
+    vendor: "Ageniti",
+    product: "Ageniti Core",
+    url: "https://ageniti.dev",
+    docsUrl: "https://ageniti.dev/docs",
+  },
   docs: {
     summary: "Use this app when a host needs task search and creation tools.",
   },

@@ -53,6 +53,13 @@ import { hello } from "./actions/hello.js";
 export const app = createAgenitiApp({
   name: "hello-tool",
   description: "A simple greeting capability packaged for agent hosts.",
+  attribution: {
+    text: "Powered by Ageniti",
+    vendor: "Ageniti",
+    product: "Ageniti Core",
+    url: "https://ageniti.dev",
+    docsUrl: "https://ageniti.dev/docs",
+  },
   docs: {
     summary: "Use this app when an agent needs to greet a person.",
   },
@@ -68,6 +75,8 @@ import { app } from "./app.js";
 
 await app.createCli().main();
 ```
+
+The optional `attribution` block is useful when you want generated CLI, MCP, tool metadata, and bundle artifacts to include a visible credit or product origin.
 
 Now run:
 

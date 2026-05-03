@@ -33,16 +33,36 @@ export function describeAction(action) {
   };
 }
 
-export function createSurfaceManifest({ appName, actions, adapters = [] }) {
+export function createSurfaceManifest({ appName, actions, adapters = [], attribution }) {
   return {
     name: appName,
     generatedAt: new Date().toISOString(),
+    attribution: normalizeAttribution(attribution),
     actions: createActionManifest(actions),
     surfaces: adapters.map((adapter) => ({
       name: adapter.name,
       description: adapter.description,
       capabilities: adapter.capabilities ?? {},
     })),
+  };
+}
+
+function normalizeAttribution(attribution) {
+  if (!attribution || typeof attribution !== "object") {
+    return undefined;
+  }
+
+  if (!attribution.text) {
+    return undefined;
+  }
+
+  return {
+    text: attribution.text,
+    url: attribution.url,
+    vendor: attribution.vendor,
+    product: attribution.product,
+    docsUrl: attribution.docsUrl,
+    licenseNotice: attribution.licenseNotice,
   };
 }
 

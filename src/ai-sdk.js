@@ -6,7 +6,7 @@ export function createOpenAITools(actions, options = {}) {
     .filter((action) => canExposeToLlm(action, options))
     .map((action) => ({
       type: "function",
-      metadata: action.publicMetadata,
+      metadata: mergeToolMetadata(action.publicMetadata, options.attribution),
       function: {
         name: action.name,
         description: action.description,
@@ -25,7 +25,7 @@ export function createOpenAIResponsesTools(actions, options = {}) {
       description: action.description,
       parameters: action.input.toJSONSchema(),
       strict: options.strict ?? true,
-      metadata: action.publicMetadata,
+      metadata: mergeToolMetadata(action.publicMetadata, options.attribution),
     }));
 }
 
@@ -40,7 +40,7 @@ export function createAISDKTools(actions, options = {}) {
 
     tools[action.name] = {
       description: action.description,
-      metadata: action.publicMetadata,
+      metadata: mergeToolMetadata(action.publicMetadata, options.attribution),
       parameters: action.input,
       inputSchema: action.input.toJSONSchema(),
       execute: async (input, executeOptions = {}) => {
@@ -70,9 +70,37 @@ export function createAISDKTools(actions, options = {}) {
 
 export function createFunctionCallingManifest(actions, options = {}) {
   return {
+    attribution: normalizeAttribution(options.attribution),
     openaiChatTools: createOpenAITools(actions, options),
     openaiResponsesTools: createOpenAIResponsesTools(actions, options),
     aiSdkTools: Object.keys(createAISDKTools(actions, options)),
+  };
+}
+
+function mergeToolMetadata(publicMetadata, attribution) {
+  const normalizedAttribution = normalizeAttribution(attribution);
+  if (!normalizedAttribution) {
+    return publicMetadata;
+  }
+
+  return {
+    ...(publicMetadata ?? {}),
+    attribution: normalizedAttribution,
+  };
+}
+
+function normalizeAttribution(attribution) {
+  if (!attribution || typeof attribution !== "object" || !attribution.text) {
+    return undefined;
+  }
+
+  return {
+    text: attribution.text,
+    url: attribution.url,
+    vendor: attribution.vendor,
+    product: attribution.product,
+    docsUrl: attribution.docsUrl,
+    licenseNotice: attribution.licenseNotice,
   };
 }
 

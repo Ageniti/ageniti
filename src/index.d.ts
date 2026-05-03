@@ -149,6 +149,15 @@ export interface AppDocs {
   examples?: Array<{ title: string; description?: string; action?: string; input?: JsonValue }>;
 }
 
+export interface AppAttribution {
+  text: string;
+  url?: string;
+  vendor?: string;
+  product?: string;
+  docsUrl?: string;
+  licenseNotice?: string;
+}
+
 export interface ExportDocsResult {
   ok: true;
   outDir: string;
@@ -312,7 +321,7 @@ export interface Cli {
   main(argv?: string[], io?: { stdout(value: string): void; stderr(value: string): void }): Promise<number>;
 }
 
-export function createCli(options: { name?: string; description?: string; docs?: AppDocs; actions?: Action[]; runtime?: ActionRuntime; runtimeOptions?: RuntimeOptions; env?: string; adapters?: SurfaceAdapter[]; buildOptions?: Omit<BuildOptions, "targets" | "cwd"> }): Cli;
+export function createCli(options: { name?: string; description?: string; docs?: AppDocs; attribution?: AppAttribution; actions?: Action[]; runtime?: ActionRuntime; runtimeOptions?: RuntimeOptions; env?: string; adapters?: SurfaceAdapter[]; buildOptions?: Omit<BuildOptions, "targets" | "cwd"> }): Cli;
 
 export type BuildTarget = "manifest" | "cli" | "mcp" | "docs" | "bundle";
 
@@ -320,6 +329,8 @@ export interface PackageMetadata {
   name?: string;
   version?: string;
   description?: string;
+  author?: string;
+  homepage?: string;
   private?: boolean;
   license?: string;
   keywords?: string[];
@@ -330,6 +341,7 @@ export interface PackageMetadata {
 export interface BuildOptions {
   targets?: BuildTarget[];
   appDescription?: string;
+  attribution?: AppAttribution;
   docs?: AppDocs;
   outDir?: string;
   appModule?: string;
@@ -375,8 +387,8 @@ export interface PackageResult {
 }
 
 export function packageArtifacts(options: BuildOptions & { appName: string; actions: Action[]; adapters?: SurfaceAdapter[]; dryRun?: boolean }): Promise<PackageResult>;
-export function createGuideDoc(options: { appName: string; appDescription?: string; docs?: AppDocs; actions?: Action[] }): string;
-export function exportDocs(options: { appName: string; appDescription?: string; docs?: AppDocs; actions?: Action[]; cwd?: string; outDir?: string; filename?: string }): Promise<ExportDocsResult>;
+export function createGuideDoc(options: { appName: string; appDescription?: string; docs?: AppDocs; actions?: Action[]; attribution?: AppAttribution }): string;
+export function exportDocs(options: { appName: string; appDescription?: string; docs?: AppDocs; actions?: Action[]; attribution?: AppAttribution; cwd?: string; outDir?: string; filename?: string }): Promise<ExportDocsResult>;
 
 export interface PublishOptions extends BuildOptions {
   dryRun?: boolean;
@@ -454,7 +466,7 @@ export interface InitProjectResult {
   nextSteps: string[];
 }
 
-export function loadProjectConfig(options?: { cwd?: string }): Promise<{ build?: BuildOptions; mcp?: { transport?: string; env?: Record<string, string> }; package?: PackageMetadata; configPath: string } | undefined>;
+export function loadProjectConfig(options?: { cwd?: string }): Promise<{ attribution?: AppAttribution; build?: BuildOptions; mcp?: { transport?: string; env?: Record<string, string> }; package?: PackageMetadata; configPath: string } | undefined>;
 export function findDefaultAppModule(options?: { cwd?: string; config?: { build?: BuildOptions } }): Promise<{ found: boolean; modulePath?: string; reason: "configured" | "node-safe-default" | "typescript-only-entry" | "missing" }>;
 export function detectTypeScriptRuntime(options?: { packageJson?: { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }; config?: { build?: BuildOptions } }): string | undefined;
 export function supportsTypeScriptEntrypoints(options?: { packageJson?: { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }; config?: { build?: BuildOptions } }): boolean;
@@ -466,14 +478,15 @@ export function createJsonRunner(options: { actions?: Action[]; runtime?: Action
   invoke(payload: { action: string; input?: unknown; confirm?: boolean; user?: unknown; auth?: unknown; metadata?: Record<string, unknown> }): Promise<RuntimeResult>;
 };
 
-export function createMcpManifest(actions: Action[], options?: { includePrivate?: boolean; includeLocal?: boolean; includeDestructive?: boolean }): { tools: unknown[] };
-export function createMcpHandler(options: { actions?: Action[]; runtime?: ActionRuntime; runtimeOptions?: RuntimeOptions; includePrivate?: boolean; includeLocal?: boolean; includeDestructive?: boolean }): (request: unknown) => Promise<unknown>;
-export function createMcpStdioServer(options: { actions?: Action[]; runtime?: ActionRuntime; runtimeOptions?: RuntimeOptions }): {
+export function createMcpManifest(actions: Action[], options?: { attribution?: AppAttribution; includePrivate?: boolean; includeLocal?: boolean; includeDestructive?: boolean }): { attribution?: AppAttribution; tools: unknown[] };
+export function createMcpHandler(options: { actions?: Action[]; attribution?: AppAttribution; runtime?: ActionRuntime; runtimeOptions?: RuntimeOptions; includePrivate?: boolean; includeLocal?: boolean; includeDestructive?: boolean }): (request: unknown) => Promise<unknown>;
+export function createMcpStdioServer(options: { actions?: Action[]; attribution?: AppAttribution; runtime?: ActionRuntime; runtimeOptions?: RuntimeOptions }): {
   start(options?: { input?: any; output?: any }): Promise<void>;
 };
 
 export interface LlmToolAdapterOptions {
   runtime?: ActionRuntime;
+  attribution?: AppAttribution;
   strict?: boolean;
   includePrivate?: boolean;
   includeLocal?: boolean;
@@ -515,6 +528,7 @@ export function createOpenAITools(actions: Action[], options?: LlmToolAdapterOpt
 export function createOpenAIResponsesTools(actions: Action[], options?: LlmToolAdapterOptions): OpenAIResponsesTool[];
 export function createAISDKTools(actions: Action[], options?: LlmToolAdapterOptions): Record<string, AISDKTool>;
 export function createFunctionCallingManifest(actions: Action[], options?: LlmToolAdapterOptions): {
+  attribution?: AppAttribution;
   openaiChatTools: OpenAIChatTool[];
   openaiResponsesTools: OpenAIResponsesTool[];
   aiSdkTools: string[];
@@ -544,9 +558,10 @@ export function diffActionManifests(previous: ActionDescription[] | { actions: A
     message: string;
   }>;
 };
-export function createSurfaceManifest(options: { appName: string; actions: Action[]; adapters?: SurfaceAdapter[] } & ManifestOptions): {
+export function createSurfaceManifest(options: { appName: string; actions: Action[]; adapters?: SurfaceAdapter[]; attribution?: AppAttribution } & ManifestOptions): {
   name: string;
   generatedAt: string;
+  attribution?: AppAttribution;
   actions: ActionDescription[];
   surfaces: Array<{ name: string; description: string; capabilities: Record<string, unknown> }>;
 };
@@ -576,11 +591,10 @@ export interface AgenitiApp {
   createFunctionCallingManifest(options?: LlmToolAdapterOptions): ReturnType<typeof createFunctionCallingManifest>;
   createReactAdapter(options?: Parameters<typeof createReactActionAdapter>[0]): ReturnType<typeof createReactActionAdapter>;
   createDevServer(options?: Partial<Parameters<typeof createDevServer>[0]>): ReturnType<typeof createDevServer>;
-  createGuideDoc(options?: { docs?: AppDocs }): string;
-  exportDocs(options?: { cwd?: string; outDir?: string; filename?: string }): Promise<ExportDocsResult>;
+  createGuideDoc(options?: { docs?: AppDocs; attribution?: AppAttribution }): string;
+  exportDocs(options?: { cwd?: string; outDir?: string; filename?: string; attribution?: AppAttribution }): Promise<ExportDocsResult>;
   build(options?: BuildOptions): Promise<BuildResult>;
   package(options?: BuildOptions & { dryRun?: boolean }): Promise<PackageResult>;
   publish(options?: PublishOptions): Promise<PublishResult>;
 }
-
-export function createAgenitiApp(options: RuntimeOptions & { name: string; description?: string; docs?: AppDocs; adapters?: SurfaceAdapter[]; build?: Omit<BuildOptions, "targets" | "cwd"> }): AgenitiApp;
+export function createAgenitiApp(options: RuntimeOptions & { name: string; description?: string; docs?: AppDocs; attribution?: AppAttribution; adapters?: SurfaceAdapter[]; build?: Omit<BuildOptions, "targets" | "cwd"> }): AgenitiApp;
