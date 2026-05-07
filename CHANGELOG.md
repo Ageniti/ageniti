@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.2
+
+SDK structure and release workflow update.
+
+### Added
+
+- SDK-style source grouping for `runtime`, `transports`, `tooling`, `clients`, `schema`, and `testing`.
+- New examples for streaming, typed clients, handler wrapping, Zod schemas, and test helpers.
+- Published package smoke coverage that installs the tarball and exercises the shipped CLI.
+
+### Fixed
+
+- Published CLI entry now resolves to the current CLI implementation.
+- Release checks now cover executable validation and tarball-installed CLI usage.
+- Documentation, exports, and examples now match the current SDK file layout and public entry points.
+- Prepack and publish dry-run flows no longer fail because of nested tarball install tests.
+
+### Changed
+
+- Root modules now expose more conventional Node SDK entry names while transport and runtime internals live in dedicated directories.
+- README and API docs were updated to reflect the current package structure and capabilities.
+
 ## 0.1.1
 
 Release hardening update for public SDK distribution.

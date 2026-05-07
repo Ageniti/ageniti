@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
@@ -37,6 +37,10 @@ import {
 const execFileAsync = promisify(execFile);
 const packageDir = path.dirname(fileURLToPath(import.meta.url));
 const buildableAppModule = path.join(packageDir, "..", "examples", "buildable-app.mjs");
+const skipPrepackTarballInstallTest =
+  process.env.npm_lifecycle_event === "prepack" ||
+  process.env.npm_config_dry_run === "true" ||
+  process.env.npm_command === "publish";
 const add = defineAction({
   name: "add_numbers",
   description: "Add two numbers.",
@@ -794,22 +798,26 @@ test("packageArtifacts creates a distributable npm tarball", async () => {
   assert.equal(descriptor.snippets.codex.mcpServers["math-server"].args[0], "./mcp-stdio.mjs");
 });
 
-test("published SDK tarball can be installed, imported, and executed through the published CLI", async () => {
+test("published SDK tarball can be installed, imported, and executed through the published CLI", { skip: skipPrepackTarballInstallTest }, async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-package-install-"));
-  const consumerDir = await mkdtemp(path.join(tempDir, "consumer-"));
+  const packDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-pack-output-"));
+  const consumerDir = await mkdtemp(path.join(os.tmpdir(), "ageniti-consumer-"));
   const sdkRoot = path.join(packageDir, "..");
   const { stdout: packStdout } = await execFileAsync("npm", [
     "pack",
     "--ignore-scripts",
     "--pack-destination",
-    tempDir,
+    packDir,
     "--cache",
     path.join(tempDir, ".npm-cache"),
   ], {
     cwd: sdkRoot,
   });
   const tarballName = packStdout.trim().split("\n").pop();
-  const tarballPath = path.join(tempDir, tarballName);
+  const tarballPath = path.join(packDir, tarballName);
+  const installTarballPath = path.join(consumerDir, tarballName);
+
+  await copyFile(tarballPath, installTarballPath);
 
   await writeFile(path.join(consumerDir, "package.json"), JSON.stringify({
     name: "consumer",
@@ -817,7 +825,7 @@ test("published SDK tarball can be installed, imported, and executed through the
     type: "module",
   }, null, 2));
 
-  await execFileAsync("npm", ["install", "--ignore-scripts", tarballPath], {
+  await execFileAsync("npm", ["install", "--ignore-scripts", installTarballPath], {
     cwd: consumerDir,
     env: {
       ...process.env,
